@@ -1,0 +1,2 @@
+python 3.12 fastapi、pillow
+その他のプロジェクトの情報は pyproject.toml 参照すること
