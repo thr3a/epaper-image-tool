@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, Response, HTTPException, Query
+from fastapi import APIRouter, UploadFile, File, Response, HTTPException, Query, Form
 from fastapi.responses import StreamingResponse
 from PIL import Image
 import io
@@ -47,14 +47,61 @@ TEMP_IMAGE_PATH = os.path.join(tempfile.gettempdir(), "epaper_last.png")
 
 
 @router.post("/process")
-async def process_image(image: UploadFile = File(...)):
+async def process_image(
+    image: UploadFile = File(...), width: int = Form(...), height: int = Form(...)
+):
+    if width <= 0 or height <= 0:
+        raise HTTPException(
+            status_code=400, detail="幅と高さは正の整数である必要があります"
+        )
+
     try:
         contents = await image.read()
-        img = Image.open(io.BytesIO(contents))
+        img = Image.open(io.BytesIO(contents)).convert("RGB")  # RGBに変換しておく
     except Exception:
         raise HTTPException(status_code=400, detail="画像の読み込みに失敗しました")
 
-    dithered = apply_dithering(img)
+    original_width, original_height = img.size
+    target_width, target_height = width, height
+    target_aspect_ratio = target_width / target_height
+
+    # 回転判定 (アスペクト比が逆転する場合)
+    rotate = False
+    if (original_width > original_height and target_width < target_height) or (
+        original_width < original_height and target_width > target_height
+    ):
+        rotate = True
+
+    if rotate:
+        img = img.rotate(90, expand=True)
+        original_width, original_height = img.size  # 回転後のサイズ
+
+    # アスペクト比を維持してリサイズ (指定解像度に収まるように)
+    img_aspect_ratio = original_width / original_height
+
+    if img_aspect_ratio > target_aspect_ratio:
+        # 画像の方が横長 -> 高さに合わせる
+        new_height = target_height
+        new_width = int(new_height * img_aspect_ratio)
+    else:
+        # 画像の方が縦長または同じ -> 幅に合わせる
+        new_width = target_width
+        new_height = int(new_width / img_aspect_ratio)
+
+    # Pillowのresizeメソッドを使用 (thumbnailはインプレース変更のため避ける)
+    # Image.LANCZOS は高品質なリサイズフィルタ
+    img_resized = img.resize((new_width, new_height), Image.LANCZOS)
+
+    # 中央からトリミング
+    left = (new_width - target_width) / 2
+    top = (new_height - target_height) / 2
+    right = (new_width + target_width) / 2
+    bottom = (new_height + target_height) / 2
+    img_cropped = img_resized.crop((left, top, right, bottom))
+
+    # 誤差拡散
+    dithered = apply_dithering(img_cropped)
+
     buf = io.BytesIO()
     dithered.save(buf, format="PNG")
     buf.seek(0)

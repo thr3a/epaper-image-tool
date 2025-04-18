@@ -8,11 +8,22 @@
     <link href="/static/index.css" rel="stylesheet">
   </head>
   <body>
-    <div class="container py-5">
+    <div class="container py-2">
       <h1 class="text-center mb-4">E-Paper Image tool</h1>
       <form id="upload-form" class="mb-4 text-center">
-        <input type="file" id="image-input" name="image" accept="image/*" class="form-control d-inline-block w-auto mb-2" required>
-        <button type="submit" class="btn btn-primary ms-2">処理開始</button>
+        <div class="row justify-content-center mb-3">
+          <p>電子ペーパーの解像度をpxで入力してください。縦横は自動調整されます。</p>
+          <div class="col-auto">
+            <input type="number" id="width-input" name="width" class="form-control d-inline-block" style="width: 100px;" placeholder="幅" required min="1" value="400">
+            x
+            <input type="number" id="height-input" name="height" class="form-control d-inline-block" style="width: 100px;" placeholder="高さ" required min="1" value="600">
+          </div>
+        </div>
+        <div class="mb-3">
+          <p>画像ファイルを選択してください。</p>
+          <input type="file" id="image-input" name="image" accept="image/*" class="form-control d-inline-block w-auto" required>
+        </div>
+        <button type="submit" class="btn btn-primary">処理開始</button>
       </form>
       <div id="result-area" class="text-center" style="min-height:300px;">
         <img id="result-image" src="" alt="加工結果画像" class="img-fluid d-none mx-auto" style="max-height:400px;">

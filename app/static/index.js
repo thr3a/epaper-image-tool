@@ -1,6 +1,8 @@
 document.addEventListener("DOMContentLoaded", function () {
   const form = document.getElementById("upload-form");
   const imageInput = document.getElementById("image-input");
+  const widthInput = document.getElementById("width-input"); // 追加
+  const heightInput = document.getElementById("height-input"); // 追加
   const resultImage = document.getElementById("result-image");
   const downloadButtons = document.getElementById("download-buttons");
   const downloadJpg = document.getElementById("download-jpg");
@@ -15,6 +17,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const formData = new FormData();
     formData.append("image", imageInput.files[0]);
+    formData.append("width", widthInput.value); // 追加
+    formData.append("height", heightInput.value); // 追加
 
     // ボタン無効化
     form.querySelector("button[type=submit]").disabled = true;
