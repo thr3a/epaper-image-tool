@@ -2,3 +2,4 @@ python 3.12 fastapi、pillow
 その他のプロジェクトの情報は pyproject.toml 参照すること
 
 サーバーはuv run uvicorn app.main:app --reload --host 0.0.0.0 --port 3000で起動中
+

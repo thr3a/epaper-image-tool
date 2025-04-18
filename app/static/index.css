@@ -1,0 +1,29 @@
+/* E-Paper Image tool カスタムスタイル */
+body {
+  background: #f8f9fa;
+}
+
+#result-area {
+  min-height: 300px;
+}
+
+#result-image {
+  border: 2px solid #dee2e6;
+  background: #fff;
+  margin-top: 16px;
+  margin-bottom: 8px;
+  max-width: 100%;
+  max-height: 400px;
+  display: block;
+}
+
+#download-buttons .btn {
+  min-width: 160px;
+  font-weight: bold;
+}
+
+@media (max-width: 576px) {
+  #result-image {
+    max-height: 200px;
+  }
+}
