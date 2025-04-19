@@ -1,5 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, Response, HTTPException, Query, Form
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, UploadFile, File, Response, HTTPException, Form
 from PIL import Image
 import io
 import tempfile
@@ -43,7 +42,7 @@ def apply_dithering(image):
 
 
 # 一時ファイルのパス（本番運用ではユーザーごとに分けるべき）
-TEMP_IMAGE_PATH = os.path.join(tempfile.gettempdir(), "epaper_last.png")
+TEMP_IMAGE_PATH = os.path.join(tempfile.gettempdir(), "epaper_last.bmp")
 
 
 @router.post("/process")
@@ -103,34 +102,10 @@ async def process_image(
     dithered = apply_dithering(img_cropped)
 
     buf = io.BytesIO()
-    dithered.save(buf, format="PNG")
+    dithered.save(buf, format="BMP")
     buf.seek(0)
     # 一時ファイルにも保存
     with open(TEMP_IMAGE_PATH, "wb") as f:
         f.write(buf.getbuffer())
     buf.seek(0)
-    return Response(content=buf.read(), media_type="image/png")
-
-
-@router.get("/download")
-async def download_image(format: str = Query("png", pattern="^(png|jpg|bmp)$")):
-    # 一時ファイルから読み込み
-    if not os.path.exists(TEMP_IMAGE_PATH):
-        raise HTTPException(
-            status_code=404, detail="画像がありません。先に処理を行ってください。"
-        )
-    img = Image.open(TEMP_IMAGE_PATH)
-    buf = io.BytesIO()
-    fmt = "PNG" if format == "png" else "JPEG" if format == "jpg" else "BMP"
-    img.save(buf, format=fmt)
-    buf.seek(0)
-    media_type = (
-        "image/png"
-        if format == "png"
-        else "image/jpeg"
-        if format == "jpg"
-        else "image/bmp"
-    )
-    filename = f"epaper_image.{format}"
-    headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
-    return StreamingResponse(buf, media_type=media_type, headers=headers)
+    return Response(content=buf.read(), media_type="image/bmp")

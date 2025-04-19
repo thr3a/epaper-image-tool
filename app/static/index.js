@@ -1,12 +1,10 @@
 document.addEventListener("DOMContentLoaded", function () {
   const form = document.getElementById("upload-form");
   const imageInput = document.getElementById("image-input");
-  const widthInput = document.getElementById("width-input"); // 追加
-  const heightInput = document.getElementById("height-input"); // 追加
+  const widthInput = document.getElementById("width-input");
+  const heightInput = document.getElementById("height-input");
   const resultImage = document.getElementById("result-image");
   const downloadButtons = document.getElementById("download-buttons");
-  const downloadJpg = document.getElementById("download-jpg");
-  const downloadPng = document.getElementById("download-png");
   const downloadBmp = document.getElementById("download-bmp");
 
   let currentImageBlob = null;
@@ -17,8 +15,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const formData = new FormData();
     formData.append("image", imageInput.files[0]);
-    formData.append("width", widthInput.value); // 追加
-    formData.append("height", heightInput.value); // 追加
+    formData.append("width", widthInput.value);
+    formData.append("height", heightInput.value);
 
     // ボタン無効化
     form.querySelector("button[type=submit]").disabled = true;
@@ -45,35 +43,21 @@ document.addEventListener("DOMContentLoaded", function () {
   function downloadImage(ext) {
     if (!currentImageBlob) return;
     let filename = "epaper_image." + ext;
-    fetch(`/download?format=${ext}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("ダウンロードに失敗しました");
-        return res.blob();
-      })
-      .then((blob) => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-        }, 100);
-      })
-      .catch((err) => {
-        alert(err.message);
-      });
+    const url = URL.createObjectURL(currentImageBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
   }
 
-  downloadJpg.addEventListener("click", function () {
-    downloadImage("jpg");
-  });
-  downloadPng.addEventListener("click", function () {
-    downloadImage("png");
-  });
-  downloadBmp.addEventListener("click", function () {
-    downloadImage("bmp");
-  });
+  if (downloadBmp) {
+    downloadBmp.addEventListener("click", function () {
+      downloadImage("bmp");
+    });
+  }
 });
