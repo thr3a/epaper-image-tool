@@ -5,12 +5,17 @@ import io
 router = APIRouter()
 
 
-def apply_dithering(image):
+def apply_dithering(image: Image.Image) -> Image.Image:
     """
     誤差拡散法（Floyd–Steinberg）を用いて、画像をカスタムパレットに変換します。
-    電子ペーパーで利用可能な色は、red, green, blue, yellow, black, white です。
+
+    Args:
+        image (Image.Image): 入力画像
+
+    Returns:
+        Image.Image: カスタムパレットでディザリングされた画像
     """
-    custom_palette = [
+    custom_palette: list[int] = [
         255,
         0,
         0,  # red
@@ -42,16 +47,24 @@ def apply_dithering(image):
 
 @router.post("/process")
 async def process_image(
-    image: UploadFile = File(...), width: int = Form(...), height: int = Form(...)
-):
-    if width <= 0 or height <= 0:
-        raise HTTPException(
-            status_code=400, detail="幅と高さは正の整数である必要があります"
-        )
+    image: UploadFile = File(...),
+    width: int = Form(...),
+    height: int = Form(...),
+) -> Response:
+    """
+    画像を受け取り、指定サイズにリサイズ・ディザリングしてBMP画像として返却します。
 
+    Args:
+        image (UploadFile): アップロード画像
+        width (int): 出力画像の幅
+        height (int): 出力画像の高さ
+
+    Returns:
+        Response: BMP画像のバイナリレスポンス
+    """
     try:
-        contents = await image.read()
-        img = Image.open(io.BytesIO(contents)).convert("RGB")
+        contents: bytes = await image.read()
+        img: Image.Image = Image.open(io.BytesIO(contents)).convert("RGB")
     except Exception:
         raise HTTPException(status_code=400, detail="画像の読み込みに失敗しました")
 
@@ -59,11 +72,9 @@ async def process_image(
     target_width, target_height = width, height
 
     # 回転判定 (アスペクト比が逆転する場合)
-    rotate = False
-    if (original_width > original_height and target_width < target_height) or (
-        original_width < original_height and target_width > target_height
-    ):
-        rotate = True
+    rotate: bool = (
+        original_width > original_height and target_width < target_height
+    ) or (original_width < original_height and target_width > target_height)
 
     if rotate:
         img = img.rotate(90, expand=True)
@@ -76,11 +87,10 @@ async def process_image(
     # 自動コントラストで画像のコントラストを調整
     img = ImageOps.autocontrast(img)
     # 彩度を強調（3倍）
-    enhancer = ImageEnhance.Color(img)
-    img = enhancer.enhance(3.0)
+    img = ImageEnhance.Color(img).enhance(3.0)
 
     # 誤差拡散
-    dithered = apply_dithering(img)
+    dithered: Image.Image = apply_dithering(img)
 
     buf = io.BytesIO()
     dithered.save(buf, format="BMP")
