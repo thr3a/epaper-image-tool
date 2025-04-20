@@ -7,7 +7,7 @@ router = APIRouter()
 
 def apply_dithering(image: Image.Image) -> Image.Image:
     """
-    誤差拡散法（Floyd–Steinberg）を用いて、画像をカスタムパレットに変換します。
+    誤差拡散法（Floyd-Steinberg）を用いて、画像をカスタムパレットに変換します。
 
     Args:
         image (Image.Image): 入力画像
@@ -15,26 +15,28 @@ def apply_dithering(image: Image.Image) -> Image.Image:
     Returns:
         Image.Image: カスタムパレットでディザリングされた画像
     """
+    # 公式サンプル準拠の6色パレット（順序・値厳守）
     custom_palette: list[int] = [
-        255,
-        0,
-        0,  # red
-        0,
-        255,
-        0,  # green
         0,
         0,
-        255,  # blue
+        0,  # 0: 黒
         255,
         255,
-        0,  # yellow
+        255,  # 1: 白
+        255,
+        243,
+        56,  # 2: 黄
+        191,
         0,
-        0,
-        0,  # black
-        255,
-        255,
-        255,  # white
+        0,  # 3: 赤
+        100,
+        64,
+        255,  # 4: 青
+        67,
+        138,
+        28,  # 5: 緑
     ]
+    # PILパレットは256色(768要素)必要なので残りは0埋め
     custom_palette.extend([0] * (768 - len(custom_palette)))
     palette_image = Image.new("P", (1, 1))
     palette_image.putpalette(custom_palette)
@@ -61,6 +63,8 @@ async def process_image(
 
     Returns:
         Response: BMP画像のバイナリレスポンス
+
+    回転→リサイズ→彩度調整→シャープネス強調→減色処理
     """
     try:
         contents: bytes = await image.read()
@@ -80,14 +84,16 @@ async def process_image(
         img = img.rotate(90, expand=True)
         original_width, original_height = img.size  # 回転後のサイズ
 
-    # アスペクト比を維持しつつ中央クロップ＆リサイズ
+    # リサイズ(中央クロップ)
     img = ImageOps.fit(
         img, (target_width, target_height), method=Image.Resampling.LANCZOS
     )
     # 自動コントラストで画像のコントラストを調整
-    img = ImageOps.autocontrast(img)
+    # img = ImageOps.autocontrast(img)
     # 彩度を強調（3倍）
-    img = ImageEnhance.Color(img).enhance(3.0)
+    # img = ImageEnhance.Color(img).enhance(3.0)
+    # シャープネスを強調
+    img = ImageEnhance.Sharpness(img).enhance(2.0)
 
     # 誤差拡散
     dithered: Image.Image = apply_dithering(img)
